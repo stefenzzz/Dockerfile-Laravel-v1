@@ -2,21 +2,19 @@
 FROM php:8.2-fpm-alpine AS build
 
 # Install build dependencies
-RUN apk update && apk add --no-cache \
-    build-base \
+RUN apk --no-cache add \
+    $PHPIZE_DEPS \
     libpng-dev \
     libjpeg-turbo-dev \
     libwebp-dev \
     libxpm-dev \
     freetype-dev \
     libzip-dev \
-    zip \
-    curl \
-    unzip \
-    git \
-    bash \
-    fcgi \
     oniguruma-dev \
+    curl \
+    git \
+    unzip \
+    bash \
     nodejs \
     npm
 
@@ -28,37 +26,32 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
 # Install Composer
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
-# Set permissions for Laravel directories
-RUN chown -R www-data:www-data /var/www
-
 # Stage 2: Runtime Stage
 FROM php:8.2-fpm-alpine AS runtime
 
-# Install runtime dependencies (excluding build dependencies)
+# Install runtime dependencies (only essential packages)
 RUN apk --no-cache add \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    libwebp-dev \
-    libxpm-dev \
-    freetype-dev \
-    libzip-dev \
+    libpng \
+    libjpeg-turbo \
+    libwebp \
+    libxpm \
+    freetype \
+    libzip \
+    oniguruma \
     zip \
     curl \
-    git \
-    unzip \
     bash \
     fcgi \
-    oniguruma-dev \
     nodejs \
     npm
 
-# Install PHP extensions (no need to re-install, as they are already built)
-RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
-    && docker-php-ext-install -j$(nproc) gd \
-    && docker-php-ext-install -j$(nproc) pdo pdo_mysql mbstring zip exif pcntl bcmath opcache
-
-# Copy Composer binary from build stage
+# Copy the built PHP extensions and Composer-installed files from the build stage
+COPY --from=build /usr/local/lib/php/extensions /usr/local/lib/php/extensions
+COPY --from=build /usr/local/etc/php/conf.d /usr/local/etc/php/conf.d
 COPY --from=build /usr/local/bin/composer /usr/local/bin/composer
+
+# Copy the application code from the build stage
+COPY --from=build /var/www /var/www
 
 # Set permissions for Laravel directories
 RUN chown -R www-data:www-data /var/www
