@@ -1,0 +1,20 @@
+
+
+services:
+  laravel:
+    container_name: laravel_test
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      -   5173:5173
+    working_dir: /var/www/laravel-test
+    volumes:
+      - ./src:/var/www/laravel-test
+    networks:
+      - web-network #specify your own docker network
+
+networks:
+  web-network:
+    external: true #declare network if external
