@@ -22,7 +22,7 @@ RUN apk update && apk add --no-cache \
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Set permissions for Laravel directories
-RUN chown -R www-data:www-data /var/www
+RUN chown -R appuser:appgroup /var/www
 
 # Runtime Stage
 FROM php:8.2-fpm-alpine AS runtime
@@ -41,7 +41,7 @@ COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/group /etc/group
 
 
-# Set permissions and switch to www-data user
+# Set permissions and switch to appuser user
 RUN chown -R appuser:appgroup /var/www && chmod -R 755 /var/www
 
 USER appuser
